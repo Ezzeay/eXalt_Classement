@@ -33,11 +33,38 @@ jobs:
           name: coverage
           path: coverage
 
+  build_static_artifact:
+    name: Build static artifact
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare static artifact
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          cp style.css _site/
+          cp app.js _site/
+          cp logic.js _site/
+          cp exalt_logo.png _site/
+
+      - name: Upload static artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-site
+          path: _site
+
   sonar:
     name: Sonar scan
     runs-on: ubuntu-latest
     needs: test
-    if: ${{ secrets.SONAR_TOKEN != '' }}
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+    if: ${{ env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != '' }}
 
     steps:
       - name: Checkout
@@ -60,5 +87,5 @@ jobs:
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v4
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
