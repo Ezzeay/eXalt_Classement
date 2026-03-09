@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>eXalt Classement</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="app-container" id="login-screen">
+        <form class="login-form" id="login-form">
+            <div class="logo">
+                <img src="exalt_logo.png" alt="eXalt logo" class="company-logo" id="login-logo" />
+                <h1>eXalt Classement</h1>
+                <p class="tagline">Connecte-toi pour gérer les équipes et le classement</p>
+            </div>
+
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input id="username" type="text" autocomplete="username" required />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input id="password" type="password" autocomplete="current-password" required />
+            </div>
+
+            <button class="login-btn" type="submit">🔐 Se connecter</button>
+            <button class="cancel-btn" id="guest-login-btn" type="button">👀 Entrer en invité</button>
+        </form>
+    </div>
+
+    <div class="main-app app-hidden" id="main-app">
+        <header class="app-header">
+            <div class="brand-section">
+                <img src="exalt_logo.png" alt="eXalt logo" class="header-logo" id="header-logo" />
+                <div class="app-title">
+                    <h1>eXalt Classement 2025</h1>
+                    <div class="breadcrumb">Teams • Points • Ranking live</div>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="user-profile">
+                    <div class="user-avatar-circle">👤</div>
+                    <div class="user-details">
+                        <strong id="current-user">eXalt_2025</strong>
+                        <small id="current-role">Admin</small>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="cancel-btn" id="reset-data-btn" type="button">Réinitialiser les données</button>
+                    <button class="cancel-btn" id="logout-btn" type="button">Se déconnecter</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="analytics-view">
+            <section class="analytics-metrics" aria-label="Statistiques">
+                <article class="card-metric">
+                    <h3>Équipes</h3>
+                    <strong id="metric-teams">0</strong>
+                </article>
+                <article class="card-metric">
+                    <h3>Participants</h3>
+                    <strong id="metric-participants">0</strong>
+                </article>
+                <article class="card-metric">
+                    <h3>Points totaux</h3>
+                    <strong id="metric-points">0</strong>
+                </article>
+            </section>
+
+            <section class="chart-card podium-section" aria-label="Podium">
+                <h3>Podium</h3>
+                <div id="podium" class="podium-wrap"></div>
+            </section>
+
+            <section class="team-management-grid" id="team-management" aria-label="Gestion des équipes">
+                <article class="chart-card">
+                    <h3>Créer une équipe</h3>
+                    <form id="create-team-form" class="participants-wrap">
+                        <div class="form-group">
+                            <label for="team-name">Nom de l'équipe</label>
+                            <input id="team-name" type="text" placeholder="Ex: Team Alpha" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="team-participants">Participants</label>
+                            <textarea id="team-participants"
+                                placeholder="Un participant par ligne ou séparés par des virgules"></textarea>
+                        </div>
+                        <button class="confirm-btn" type="submit">Ajouter l'équipe</button>
+                    </form>
+                </article>
+
+                <article class="chart-card">
+                    <h3>Équipes existantes</h3>
+                    <div id="teams-list" class="teams-list"></div>
+                </article>
+            </section>
+
+            <section class="analytics-breakdown classement-wrap" aria-label="Classement">
+                <h3>Classement des équipes</h3>
+                <table class="simple-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Équipe</th>
+                            <th>Participants</th>
+                            <th>Points</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ranking-body"></tbody>
+                </table>
+            </section>
+
+            <section class="chart-card" aria-label="Historique des actions">
+                <h3>History log</h3>
+                <div id="history-log" class="history-log"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="logic.js" defer></script>
+    <script src="app.js" defer></script>
+</body>
+
+</html>

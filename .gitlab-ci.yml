@@ -1,0 +1,41 @@
+stages:
+  - test
+  - quality
+
+variables:
+  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+  GIT_DEPTH: "0"
+
+default:
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+      - .sonar/cache
+
+unit_tests:
+  stage: test
+  image: node:20-alpine
+  script:
+    - npm ci
+    - npm run test
+  artifacts:
+    when: always
+    paths:
+      - coverage/
+    expire_in: 1 week
+
+sonar_scan:
+  stage: quality
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  needs:
+    - job: unit_tests
+      artifacts: true
+  script:
+    - sonar-scanner -Dsonar.qualitygate.wait=true
+  rules:
+    - if: $SONAR_HOST_URL && $SONAR_TOKEN
+      when: on_success
+    - when: never
