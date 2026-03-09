@@ -69,9 +69,20 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
         run: |
           if [[ -n "$SONAR_TOKEN" && -n "$SONAR_HOST_URL" ]]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+            if [[ "$SONAR_HOST_URL" == *"sonarcloud.io"* ]]; then
+              echo "is_sonarcloud=true" >> "$GITHUB_OUTPUT"
+              if [[ -z "$SONAR_ORGANIZATION" ]]; then
+                echo "enabled=false" >> "$GITHUB_OUTPUT"
+                echo "SonarCloud scan skipped: SONAR_ORGANIZATION is missing"
+              fi
+            else
+              echo "is_sonarcloud=false" >> "$GITHUB_OUTPUT"
+            fi
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
             echo "Sonar scan skipped: SONAR_TOKEN or SONAR_HOST_URL is missing"
@@ -99,8 +110,18 @@ jobs:
         run: npm run test
 
       - name: SonarCloud Scan
-        if: steps.sonar_check.outputs.enabled == 'true'
-        uses: SonarSource/sonarqube-scan-action@v4
+        if: steps.sonar_check.outputs.enabled == 'true' && steps.sonar_check.outputs.is_sonarcloud == 'true'
+        uses: SonarSource/sonarqube-scan-action@v6
+        with:
+          args: >
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      - name: SonarQube Scan
+        if: steps.sonar_check.outputs.enabled == 'true' && steps.sonar_check.outputs.is_sonarcloud == 'false'
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}

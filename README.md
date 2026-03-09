@@ -137,6 +137,7 @@ On push/PR to `main`:
 ### Required secrets for Sonar job
 - `SONAR_TOKEN`
 - `SONAR_HOST_URL`
+- `SONAR_ORGANIZATION` (required only for SonarCloud)
 
 If these are not set, tests still run and Sonar job is skipped.
 
