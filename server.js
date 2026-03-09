@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");
 const path = require("node:path");
 const fs = require("node:fs");
 const { Low } = require("lowdb");
@@ -17,6 +18,7 @@ const adapter = new JSONFile(dbPath);
 const db = new Low(adapter, { teams: [], history: [] });
 
 app.use(express.json());
+app.use(cors());
 app.use(express.static(__dirname));
 
 function uuid() {
