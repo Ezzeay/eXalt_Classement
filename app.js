@@ -6,8 +6,6 @@ const ADMIN_CREDENTIALS = [
 const STORAGE_KEYS = {
     auth: "eXalt_auth",
     role: "eXalt_role",
-    teams: "eXalt_teams",
-    history: "eXalt_history",
 };
 
 const ROLES = {
@@ -123,16 +121,8 @@ function safeParseArray(storageKey) {
     }
 }
 
-let teams = safeParseArray(STORAGE_KEYS.teams)
-    .map((entry) => logicNormalizeTeam(entry))
-    .filter(Boolean)
-    .map((team) => ({ ...team, id: team.id === "generated-id" ? crypto.randomUUID() : team.id }));
-
-let history = safeParseArray(STORAGE_KEYS.history)
-    .map((entry) => logicNormalizeHistory(entry))
-    .filter(Boolean)
-    .map((entry) => ({ ...entry, id: entry.id === "generated-id" ? crypto.randomUUID() : entry.id }))
-    .slice(0, UI.maxHistory);
+let teams = [];
+let history = [];
 
 function getSessionRole() {
     return localStorage.getItem(STORAGE_KEYS.role) || ROLES.admin;
@@ -169,9 +159,37 @@ function clearSession() {
     localStorage.removeItem(STORAGE_KEYS.role);
 }
 
-function persistState() {
-    localStorage.setItem(STORAGE_KEYS.teams, JSON.stringify(teams));
-    localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(history));
+async function apiRequest(path, options = {}) {
+    const headers = options.headers || {};
+    const response = await fetch(path, {
+        headers: {
+            "Content-Type": "application/json",
+            ...headers,
+        },
+        ...options,
+    });
+
+    if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || `API error ${response.status}`);
+    }
+
+    return response.json().catch(() => ({}));
+}
+
+async function loadSharedState() {
+    const state = await apiRequest("/api/state");
+
+    teams = (Array.isArray(state.teams) ? state.teams : [])
+        .map((entry) => logicNormalizeTeam(entry))
+        .filter(Boolean)
+        .map((team) => ({ ...team, id: team.id === "generated-id" ? crypto.randomUUID() : team.id }));
+
+    history = (Array.isArray(state.history) ? state.history : [])
+        .map((entry) => logicNormalizeHistory(entry))
+        .filter(Boolean)
+        .map((entry) => ({ ...entry, id: entry.id === "generated-id" ? crypto.randomUUID() : entry.id }))
+        .slice(0, UI.maxHistory);
 }
 
 function showToast(message, isError = false) {
@@ -199,15 +217,7 @@ function formatDateTime(isoDate) {
 }
 
 function addHistoryEntry(message) {
-    history.unshift({
-        id: crypto.randomUUID(),
-        message,
-        createdAt: new Date().toISOString(),
-    });
-
-    if (history.length > UI.maxHistory) {
-        history = history.slice(0, UI.maxHistory);
-    }
+    history.unshift({ id: crypto.randomUUID(), message, createdAt: new Date().toISOString() });
 }
 
 function participantsAsChips(participants) {
@@ -365,16 +375,21 @@ function renderHistory() {
     historyLog.appendChild(fragment);
 }
 
-function refreshUI() {
+async function refreshUI() {
+    try {
+        await loadSharedState();
+    } catch {
+        showToast("Impossible de charger les données partagées.", true);
+    }
+
     renderMetrics();
     renderTeams();
     renderRanking();
     renderPodium();
     renderHistory();
-    persistState();
 }
 
-function handleCreateTeam(event) {
+async function handleCreateTeam(event) {
     event.preventDefault();
 
     if (!canManageData()) {
@@ -394,20 +409,24 @@ function handleCreateTeam(event) {
         return;
     }
 
-    teams.push({
-        id: crypto.randomUUID(),
-        name,
-        participants: logicSanitizeParticipants(teamParticipantsInput.value),
-        points: 0,
-    });
+    try {
+        await apiRequest("/api/teams", {
+            method: "POST",
+            body: JSON.stringify({
+                name,
+                participants: logicSanitizeParticipants(teamParticipantsInput.value),
+            }),
+        });
 
-    addHistoryEntry(`Équipe créée: ${name}`);
-    createTeamForm.reset();
-    refreshUI();
-    showToast("Équipe ajoutée ✅");
+        createTeamForm.reset();
+        await refreshUI();
+        showToast("Équipe ajoutée ✅");
+    } catch (error) {
+        showToast(error.message || "Erreur lors de l'ajout de l'équipe.", true);
+    }
 }
 
-function handleTeamActions(event) {
+async function handleTeamActions(event) {
     if (!canManageData()) {
         if (event.type === "submit" || event.target.closest(".js-delete")) {
             event.preventDefault();
@@ -431,10 +450,17 @@ function handleTeamActions(event) {
             return;
         }
 
-        team.points += pointsValue;
-        addHistoryEntry(`${team.name}: ${pointsValue > 0 ? "+" : ""}${pointsValue} pts (manuel)`);
-        refreshUI();
-        showToast("Points mis à jour ✅");
+        try {
+            await apiRequest(`/api/teams/${team.id}/points`, {
+                method: "PATCH",
+                body: JSON.stringify({ delta: pointsValue }),
+            });
+
+            await refreshUI();
+            showToast("Points mis à jour ✅");
+        } catch (error) {
+            showToast(error.message || "Erreur lors de la mise à jour.", true);
+        }
         return;
     }
 
@@ -449,17 +475,23 @@ function handleTeamActions(event) {
     }
 
     const deletedTeam = teams.find((team) => team.id === parentForm.dataset.teamId);
-    teams = teams.filter((team) => team.id !== parentForm.dataset.teamId);
-
-    if (deletedTeam) {
-        addHistoryEntry(`Équipe supprimée: ${deletedTeam.name}`);
+    if (!deletedTeam) {
+        return;
     }
 
-    refreshUI();
-    showToast("Équipe supprimée");
+    try {
+        await apiRequest(`/api/teams/${deletedTeam.id}`, {
+            method: "DELETE",
+        });
+
+        await refreshUI();
+        showToast("Équipe supprimée");
+    } catch (error) {
+        showToast(error.message || "Erreur lors de la suppression.", true);
+    }
 }
 
-function handleResetData() {
+async function handleResetData() {
     if (!canManageData()) {
         showToast("Mode invité: modification non autorisée.", true);
         return;
@@ -470,12 +502,14 @@ function handleResetData() {
         return;
     }
 
-    teams = [];
-    history = [];
-    addHistoryEntry("Données réinitialisées par l'admin");
-    createTeamForm.reset();
-    refreshUI();
-    showToast("Données réinitialisées ✅");
+    try {
+        await apiRequest("/api/reset", { method: "POST" });
+        createTeamForm.reset();
+        await refreshUI();
+        showToast("Données réinitialisées ✅");
+    } catch (error) {
+        showToast(error.message || "Erreur lors de la réinitialisation.", true);
+    }
 }
 
 function wireSafeImageFallback(imgElement) {
@@ -525,5 +559,4 @@ resetDataBtn.addEventListener("click", handleResetData);
 wireSafeImageFallback(loginLogo);
 wireSafeImageFallback(headerLogo);
 updateAuthUI();
-refreshUI();
 refreshUI();

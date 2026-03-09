@@ -3,8 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
     "test": "vitest run --coverage",
     "test:watch": "vitest"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "lowdb": "^7.0.1"
   },
   "devDependencies": {
     "vitest": "^2.1.9",

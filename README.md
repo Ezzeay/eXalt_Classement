@@ -7,6 +7,7 @@ Simple web app to manage team rankings:
 - live classement (ranking)
 - podium top 3
 - history log of actions
+- shared server-side data storage (file database)
 
 ---
 
@@ -56,6 +57,7 @@ This repository contains a lightweight front-end app (HTML/CSS/JS) with:
 - `index.html` → app layout
 - `style.css` → UI styling (cleaned and mobile-friendly)
 - `app.js` → main app logic and interactions
+- `server.js` → Express API + persistent shared JSON DB (lowdb)
 - `logic.js` → shared logic module (also unit tested)
 - `tests/logic.test.js` → unit tests
 - `.github/workflows/ci.yml` → CI pipeline
@@ -85,13 +87,21 @@ This repository contains a lightweight front-end app (HTML/CSS/JS) with:
 npm install
 ```
 
-### 2) Run tests
+### 2) Start app server (shared DB)
+```bash
+npm start
+```
+
+Then open:
+`http://localhost:3000`
+
+### 3) Run tests
 ```bash
 npm test
 ```
 
-### 3) Open app
-Open `index.html` directly in browser, or serve the folder with any static server.
+The shared database file is created automatically in:
+- `data/exalt_classement.json`
 
 ---
 
@@ -147,6 +157,8 @@ Repository → **Settings** → **Pages**
 
 Expected URL:
 - `https://ezzeay.github.io/eXalt_Classement/`
+
+> Important: GitHub Pages is static hosting. Shared server-side data requires running `server.js` on a backend host (Render/Railway/Fly.io/VM).
 
 ---
 
