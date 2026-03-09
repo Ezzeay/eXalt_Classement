@@ -18,6 +18,10 @@ const UI = {
     toastDurationMs: 2200,
 };
 
+const API_BASE_URL = String(globalThis.API_BASE_URL || "")
+    .trim()
+    .replace(/\/+$/, "");
+
 const localLogicFallback = {
     sanitizeParticipants(raw) {
         return String(raw || "")
@@ -160,8 +164,25 @@ function clearSession() {
 }
 
 async function apiRequest(path, options = {}) {
+    const requestUrl = (() => {
+        const normalizedPath = String(path || "");
+        if (!normalizedPath) {
+            return normalizedPath;
+        }
+
+        if (/^https?:\/\//i.test(normalizedPath) || !API_BASE_URL) {
+            return normalizedPath;
+        }
+
+        if (normalizedPath.startsWith("/")) {
+            return `${API_BASE_URL}${normalizedPath}`;
+        }
+
+        return `${API_BASE_URL}/${normalizedPath}`;
+    })();
+
     const headers = options.headers || {};
-    const response = await fetch(path, {
+    const response = await fetch(requestUrl, {
         headers: {
             "Content-Type": "application/json",
             ...headers,

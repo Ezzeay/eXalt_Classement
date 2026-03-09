@@ -95,6 +95,27 @@ npm start
 Then open:
 `http://localhost:3000`
 
+### API base URL configuration
+
+- Frontend requests use `config.js` (`API_BASE_URL`)
+- For local full-stack usage with `npm start`, keep:
+
+```js
+globalThis.API_BASE_URL = "";
+```
+
+- For GitHub Pages frontend + hosted backend, set:
+
+```js
+globalThis.API_BASE_URL = "https://your-backend-domain";
+```
+
+Example:
+
+```js
+globalThis.API_BASE_URL = "https://exalt-classement-api.onrender.com";
+```
+
 ### 3) Run tests
 ```bash
 npm test
