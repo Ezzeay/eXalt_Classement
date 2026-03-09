@@ -40,6 +40,22 @@ describe("logic.normalizeTeam", () => {
         expect(normalizeTeam(null)).toBeNull();
         expect(normalizeTeam({ name: "   " })).toBeNull();
     });
+
+    it("uses fallback id and points when fields are invalid", () => {
+        const team = normalizeTeam({
+            id: "",
+            name: "Team B",
+            participants: ["Sam"],
+            points: "not-a-number",
+        });
+
+        expect(team).toEqual({
+            id: "generated-id",
+            name: "Team B",
+            participants: ["Sam"],
+            points: 0,
+        });
+    });
 });
 
 describe("logic.normalizeHistory", () => {
@@ -48,6 +64,26 @@ describe("logic.normalizeHistory", () => {
         expect(result.message).toBe("Created");
         expect(result.id).toBe("generated-id");
         expect(typeof result.createdAt).toBe("string");
+    });
+
+    it("keeps explicit id and createdAt when provided", () => {
+        const createdAt = "2026-03-09T10:00:00.000Z";
+        const result = normalizeHistory({
+            id: "h-1",
+            message: "Updated",
+            createdAt,
+        });
+
+        expect(result).toEqual({
+            id: "h-1",
+            message: "Updated",
+            createdAt,
+        });
+    });
+
+    it("returns null when history entry is invalid", () => {
+        expect(normalizeHistory(undefined)).toBeNull();
+        expect(normalizeHistory({ message: "   " })).toBeNull();
     });
 });
 
